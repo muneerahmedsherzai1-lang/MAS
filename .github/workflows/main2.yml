@@ -1,0 +1,47 @@
+name: Windows 11 General Tasks with RDP (Stable)
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  general-tasks:
+    runs-on: windows-latest
+    timeout-minutes: 360
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: System Info
+        shell: pwsh
+        run: |
+          systeminfo | Select-String "OS Name","OS Version","System Type"
+
+      - name: Enable RDP (Password Policy Fixed)
+        shell: pwsh
+        run: |
+          Write-Host "Enabling RDP..."
+
+          $Password = -join (
+            (48..57 + 65..90 + 97..122 + 33..38) |
+            Get-Random -Count 16 |
+            ForEach-Object { [char]$_ }
+          )
+
+          net user runneradmin "$Password"
+
+          Set-ItemProperty `
+            -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" `
+            -Name "fDenyTSConnections" -Value 0
+
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+
+          Write-Host "================================="
+          Write-Host "RDP USER : runneradmin"
+          Write-Host "RDP PASS : $Password"
+          Write-Host "================================="
+
+        
+
+  
